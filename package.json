@@ -1,0 +1,9 @@
+{
+  "name": "charts-pure-js",
+  "version": "1.0.0",
+  "description": "Trying highcharts with pure js",
+  "main": "main.js",
+  "author": "Lucas Andrade (Wesper)",
+  "license": "MIT",
+  "private": true
+}
