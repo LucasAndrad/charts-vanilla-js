@@ -1,4 +1,4 @@
-const chartSize = 300 * 1000;
+const chartSize = 261 * 1000;
 const colors = [
   'rgb(255, 0, 0)',
   'rgb(128, 0, 0)',
@@ -19,8 +19,9 @@ function getRandomColor() {
 function getMockMarkers() {
   // return [];
 
+  const xRange = 770;
   // const xRange = 500;
-  const xRange = 2 * 1000;
+  // const xRange = 2 * 1000;
   // const xRange = 10 * 1000;
 
   const markers = [];
@@ -81,9 +82,8 @@ function getMockMarkers() {
         }
       }
     )
-  }
+  };
 
-  console.log('markers len', markers.length)
   return markers;
 }
 
@@ -97,7 +97,6 @@ function getData(n, scale = 0) {
   let spike = 0;
 
   for (
-    // i = 0, x = Date.UTC(new Date().getUTCFullYear(), 0, 1) - n * 36e5;
     i = 0;
     i < n;
     i = i + 1, x = x + 1
@@ -131,15 +130,13 @@ function buildChart(divName, showXaxis = false, providedData) {
     lineWidth: 1,
     showInLegend: true,
   };
-  // Highcharts.chart(divName, {
   Highcharts.stockChart(divName, {
+      tooltip: { enabled: false },
       scrollbar: {
         enabled: false,
       },
       chart: {
           zoomType: 'x',
-          // panning: true,
-          // panKey: 'shift',
           height: 100,
       },
 
@@ -149,22 +146,23 @@ function buildChart(divName, showXaxis = false, providedData) {
       navigator: {
         enabled: false
       },
-      // legend:{ enabled:false },
 
       title: {
           text: ''
       },
-
-      // subtitle: {
-      //     text: 'Using the Boost module'
-      // },
-
       tooltip: {
           valueDecimals: 2
       },
-
       series: seriesList,
       plotOptions: {
+        series: {
+          enableMouseTracking: false,
+          states: {
+            hover: {
+                enabled: false
+            }
+          }
+        },
         line: {
           dataGrouping: {
             enabled: true,
@@ -181,21 +179,18 @@ function buildChart(divName, showXaxis = false, providedData) {
         visible: showXaxis,
         scrollbar: {
           enabled: false,
-          // buttonsEnabled: true,
-          // height: 25,
         },
       }
   });
 }
 
-// console.log(Highcharts.charts[0].xAxis);
-// dataMin 499.999
-// dataMax
 const scrollStep = 5 * 1000
 const zoomRange = 5 * 1000
 let initialMin = 0;
 
 function scrollRight() {
+  console.log('scrollRight was called');
+  console.time('scroll-chart');
   let newExtremeMin = initialMin;
   let newExtremeMax = initialMin + zoomRange;
   Highcharts.charts.forEach((chart) => {
@@ -209,90 +204,22 @@ function scrollRight() {
     );
   });
   initialMin = initialMin + scrollStep;
+  console.timeEnd('scroll-chart');
 }
 
-function scrollToLeft() {
-  initialMin = initialMin - (2 *scrollStep);
-
-  let newExtremeMin = initialMin
-  let newExtremeMax = initialMin + zoomRange;
-  if (initialMin < zoomRange) {
-    newExtremeMin = 0
-    newExtremeMax = zoomRange;
-  }
-
-  Highcharts.charts.forEach((chart) => {
-    if (!chart) return;
-
-    if (newExtremeMax > chartSize) return;
-    chart.xAxis[0].setExtremes(
-      dataMin=newExtremeMin,
-      dataMax=newExtremeMax,
-      trigger='scrollbar',
-    );
-  });
-  initialMin = initialMin - scrollStep;
-}
-
-function buildGraphs(csvContent) {
-  const chartNames = [
-    'Position',
-    'ABD',
-    'THX',
-    'SUM_Flow',
-    'SUM_Pressure',
-    'SpO2',
-    'Pulse',
-  ];
-
-  const chartsDataIndex = {};
-  const csvHeader = csvContent.split('\n')[0].split(',');
-  csvHeader.forEach((item, index) => {
-    if (chartNames.includes(item)) {
-      chartsDataIndex[item] = index
-    }
-  });
-
-  let chartsData = {};
-  chartNames.forEach((item) => {
-    chartsData[item] = {
-      name: item,
-      data: []
-    };
-  });
-
-  csvContent.split('\n').forEach((row, index) => {
-    if (index === 0) {return;}
-    let data = row.split(',');
-    Object.entries(chartsDataIndex).forEach((item) => {
-      let currentData = chartsData[item[0]].data;
-      let x = currentData.length;
-      let y = parseFloat(data[item[1]]);
-      currentData.push([x, y]);
-      chartsData[item[0]].data = currentData;
-    });
-  });
-
+function buildChartsFromMock() {
   let chartsDivContainer = document.getElementById('charts-container');
-  Object.values(chartsData).forEach((item, index) => {
+  let totalChartsToBuild = [1,2,3,4,5,6,7];
+
+  totalChartsToBuild.forEach((item, index) => {
+    var data = getData(chartSize);
     let chartDiv = document.createElement('div');
-    chartDiv.id = item.name;
+    chartDiv.id = `chart-n${item}`;
 
     chartsDivContainer.appendChild(chartDiv);
-    let showXaxis = (index + 1) === Object.keys(chartsData).length;
-    buildChart(item.name, showXaxis, item.data);
+    let showXaxis = (index + 1) === totalChartsToBuild.length;
+    buildChart(chartDiv.id, showXaxis, data);
   });
 }
 
-function handleFile(event) {
-  console.log("==== Event file input", event);
-  let file = event.target.files[0];
-  var reader = new FileReader();
-  reader.readAsText(file, "UTF-8");
-  reader.onload = function (evt) {
-      buildGraphs(evt.target.result);
-  }
-  reader.onerror = function (evt) {
-      console.log("Error:", evt);
-  }
-}
+buildChartsFromMock();
